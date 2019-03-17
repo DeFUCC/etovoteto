@@ -49,10 +49,13 @@
 
 
 <script id="author" type="x-template">
-  <v-layout column>
+  <v-layout row wrap>
     <v-flex xs12 sm6 offset-sm3>
+
+      <h1 v-if="me">Я ЗДЕСЬ!</h1>
+      {{me}}
       <p>
-        Этот раздел только для авторов. Но автором может стать каждый! Достаточно представиться и войти.
+        Этот раздел доступен только авторам. Но автором может стать каждый! Достаточно представиться и войти.
       </p>
     </v-flex>
     <v-flex xs12 sm6 offset-sm3>
@@ -80,8 +83,8 @@
           v-model="user.password"></v-text-field>
 
           <v-flex v-if="!register" text-xs-center>
-            <v-btn dark>Войти</v-btn>
-            <v-btn  outline :disabled="register" @click="register=true">Представиться</v-btn>
+            <v-btn  dark  @click="register=true">Представиться</v-btn>
+            <v-btn outline :disabled="!valid" @click="login(user)">Войти</v-btn>
           </v-flex>
 
           <v-text-field
@@ -123,7 +126,7 @@
 
 
             <v-flex v-if="register" text-xs-center>
-              <v-btn  dark @click="register(user)" color="error">Представиться</v-btn>
+              <v-btn  @click="register(user)" raised :disabled="!valid">Представиться</v-btn>
             </v-flex>
 
       </v-form>
@@ -138,12 +141,11 @@
 <script id="words" type="x-template">
   <v-layout row wrap>
     <v-flex xs12 sm6 offset-sm3>
-      <v-form>
+      <v-form @submit.prevent v-model="valid">
           <v-text-field
             autofocus
             @input="search(add.word)"
-            @submit.prevent
-            :rules="rules"
+            :rules="wordRules"
             clearable
             outline
             counter
@@ -152,9 +154,55 @@
             v-model="add.word"></v-text-field>
       </v-form>
     </v-flex>
-    <v-flex xs12 sm6 offset-sm3 v-for="word in words" v-bind:key="word.word">
+    <v-flex v-if="words" xs12 sm6 offset-sm3 v-for="word in words" v-bind:key="word.word">
       <wordcard :word="word"></wordcard>
     </v-flex>
+
+    <v-flex xs12 sm8 offset-sm2 v-if="newWord && valid"  >
+
+    <v-stepper v-model="newStep" vertical>
+    <v-flex  ma-3><h3 >Такого слова ещё нет в нашем словаре. Давайте добавим!</h3></v-flex>
+    <v-stepper-step :complete="newStep>1" step="1">
+      Укажите ударение в слове
+    </v-stepper-step>
+
+    <v-stepper-content step="1">
+      <v-btn-toggle v-model="stress">
+        <v-btn large @click="newStep=2;add.stress=index+1" v-for="(letter,index) in add.word" :key="index">{{letter}}</v-btn>
+      </v-btn-toggle>
+    </v-stepper-content>
+
+    <v-stepper-step  :rules="[() => newStep<=2 || validDesc]" :complete="newStep > 2" step="2">Придумайте определение</v-stepper-step>
+
+    <v-stepper-content step="2">
+      <h2 mb-2 class="the-word">
+          {{parts[0]}}{{parts[1]}}&#x301{{parts[2]}} &mdash; это
+        </h2>
+        <v-form @submit.prevent v-model="validDesc">
+            <v-textarea
+              :rules="descRules"
+              box
+              auto-grow
+              counter="140"
+              hint="Что это слово могло бы обозначать?"
+              v-model="add.desc"></v-textarea>
+            <v-btn :disabled="!validDesc" small @click="newStep=3">Готово</v-btn>
+        </v-form>
+
+    </v-stepper-content>
+
+    <v-stepper-step  :complete="newStep > 3" step="3">Представьтесь</v-stepper-step>
+
+    <v-stepper-content step="3">
+
+      как вас зовут?
+
+    </v-stepper-content>
+
+  </v-stepper>
+
+    </v-flex>
+
   </v-layout>
 </script>
 

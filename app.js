@@ -1,6 +1,7 @@
 const client = new DirectusSDK({
   url:'http://etovoteto.ru/api/public',
   project:'_',
+  persist:true,
   storage: window.localStorage
 });
 

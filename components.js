@@ -40,7 +40,6 @@ const Card = Vue.component('wordcard', {
       return rot
     },
     parts() {
-      console.log(this.word.author.avatar)
       let stress=this.word.stress-1;
       let arr = [...this.word.word];
       let parts=[];

@@ -5,6 +5,7 @@ const AuthorPage = Vue.component('author', {
   data() {
     return {
       title:'Authors page',
+      me:null,
       valid:false,
       showPassword:false,
       register:false,
@@ -36,6 +37,25 @@ const AuthorPage = Vue.component('author', {
         password:''
       }
     }
+  },
+  computed: {
+
+  },
+  methods: {
+    login(user) {
+      client.login({
+        email:user.email,
+        password:user.password
+      }).then(
+        data => client.getMe().then(me => this.me=me)
+      ).catch(error => console.log(error))
+
+    }
+  },
+  created() {
+    console.log(client.loggedIn);
+    client.getMe().then(me=>console.log(me)).catch(e=>console.log(e));
+
   }
 })
 
@@ -48,20 +68,35 @@ const WordsPage = Vue.component('words', {
     return {
       title:'Words page',
       words:[],
+      newWord:false,
+      stress:0,
+      newStep:1,
+      valid:false,
+      validDesc:true,
       add: {
         word: '',
-        stress:'',
+        stress:0,
         desc:''
       },
-
-      rules:[
-        v => (v || '').indexOf(' ') < 0 ||
-              'Только одно слово, без пробелов'
+      descRules: [
+        v => v.length<140 || 'Слишком длинное определение',
+        v => v.length>7 || 'Слишком короткое определение'
+      ],
+      wordRules:[
+        v => /^[А-Яа-яёЁ]+$/.test(v) || 'Только русские буквы',
+        v => (v || '').indexOf(' ') < 0 || 'Только одно слово, без пробелов'
       ],
     }
   },
   methods: {
+    resetSearch() {
+      this.add.stress=0;
+      this.newStep=1;
+      this.stress=0;
+    },
     search(word) {
+      this.resetSearch();
+
       client.getItems('words',{
         filter: {
           word: {
@@ -69,7 +104,10 @@ const WordsPage = Vue.component('words', {
           }
         }
       }).then(data => {
-        console.log(data)
+        console.log('search')
+        if(data.data.length==0) {
+          this.newWord=true;
+        } else {this.newWord=false}
         this.words=data.data
       }).catch(error => console.log(error));
     },
@@ -85,35 +123,15 @@ const WordsPage = Vue.component('words', {
 
     }
   },
-  created() {
-    this.getWords();
-  }
-})
-
-
-const AddWordPage = Vue.component('addword', {
-  template:'#addword',
-  data() {
-    return {
-      title:'Add word page',
-      words:[],
-      addWord: {
-        title: '',
-        stress:'',
-        desc:''
-      }
-    }
-  },
-  methods: {
-    getWords(limit=100) {
-      client.getItems('words',{
-        fields:'word,stress,primary_desc.text,author.name,author.link',
-        sort:'?',
-        limit:limit
-      }).then(data => {
-        console.log(data)
-        this.words=data.data
-      }).catch(error => console.log(error));
+  computed: {
+    parts() {
+      let stress=this.add.stress-1;
+      let arr = [...this.add.word];
+      let parts=[];
+      parts[0]=arr[0].toUpperCase() + arr.slice(1,stress).join('');
+      parts[1]=arr.slice(stress,stress+1).join('');
+      parts[2]=arr.slice(stress+1).join('');
+      return parts
     }
   },
   created() {
