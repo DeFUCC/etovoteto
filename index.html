@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <title>ЭТОВОТЭТО</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    <link rel="stylesheet" href="style.css"/>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet">
+    <link href="https://cdn.materialdesignicons.com/2.5.94/css/materialdesignicons.min.css" rel="stylesheet"/>
+   <link href="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css" rel="stylesheet">
+
+
+  </head>
+
+  <body>
+    <div id="app">
+      <v-app>
+        <v-toolbar  flat height="120px">
+          <v-spacer></v-spacer>
+          <v-toolbar-title style="margin-left:0;" class="display-2">ЭТО ВОТ ЭТО</v-toolbar-title>
+          <v-spacer></v-spacer>
+        </v-toolbar>
+
+        <v-toolbar flat>
+          <v-spacer></v-spacer>
+          <v-toolbar-items>
+            <v-btn flat small to="/">Слова</v-btn>
+            <v-btn flat small to="/desc">Определения</v-btn>
+            <v-btn flat small to="/author">Авторы</v-btn>
+          </v-toolbar-items>
+          <v-spacer></v-spacer>
+        </v-toolbar>
+
+        <v-content>
+
+          <v-container grid-list-lg>
+
+            <router-view></router-view>
+          </v-container>
+
+
+    </v-app>
+  </div>
+</body>
+
+
+
+
+
+
+<script id="author" type="x-template">
+  <v-layout column>
+    <v-flex xs12 sm6 offset-sm3>
+      <p>
+        Этот раздел только для авторов. Но автором может стать каждый! Достаточно представиться и войти.
+      </p>
+    </v-flex>
+    <v-flex xs12 sm6 offset-sm3>
+      <v-form v-model="valid">
+      <v-text-field
+        autofocus
+        outline
+        counter
+        hint=""
+        :rules="rules.email"
+        validate-on-blur
+
+        label="Эл. почта"
+        v-model="user.email"></v-text-field>
+        <v-text-field
+          outline
+          counter
+          hint=""
+          :rules="rules.password"
+          validate-on-blur
+          :type="showPassword ? 'text' : 'password'"
+          :append-icon="showPassword ? 'visibility' : 'visibility_off'"
+          @click:append="showPassword = !showPassword"
+          label="Пароль"
+          v-model="user.password"></v-text-field>
+
+          <v-flex v-if="!register" text-xs-center>
+            <v-btn dark>Войти</v-btn>
+            <v-btn  outline :disabled="register" @click="register=true">Представиться</v-btn>
+          </v-flex>
+
+          <v-text-field
+            v-if="register"
+            outline
+            counter
+            hint="Имя и фамилия или псевдоним"
+            :rules="rules.name"
+            label="Имя"
+            v-model="user.name"></v-text-field>
+
+            <v-text-field
+              v-if="register"
+              outline
+              counter
+              hint="Ваш аккаунт в выбранной сети"
+              :rules="rules.account"
+              label="Аккаунт"
+              v-model="user.account" >
+
+                <v-menu slot="prepend-inner" >
+                  <v-btn slot="activator" flat large icon><v-icon>mdi-{{user.net}}</v-icon>
+                  <v-icon>mdi-chevron-down</v-icon></v-btn>
+
+                  <v-list>
+                    <v-list-tile
+                      v-for="(net, index) in nets"
+                      :key="index"
+                      @click="user.net=net.name"
+                    >
+                      <v-list-tile-title><v-icon>mdi-{{net.name}}</v-icon></v-list-tile-title>
+                    </v-list-tile>
+                  </v-list>
+                </v-menu>
+
+
+
+            </v-text-field>
+
+
+            <v-flex v-if="register" text-xs-center>
+              <v-btn  dark @click="register(user)" color="error">Представиться</v-btn>
+            </v-flex>
+
+      </v-form>
+    </v-flex>
+  </v-layout>
+</script>
+
+
+
+
+
+<script id="words" type="x-template">
+  <v-layout row wrap>
+    <v-flex xs12 sm6 offset-sm3>
+      <v-form>
+          <v-text-field
+            autofocus
+            @input="search(add.word)"
+            @submit.prevent
+            :rules="rules"
+            clearable
+            outline
+            counter
+            hint="Найдите или предложите новое"
+            label="Выдуманное слово"
+            v-model="add.word"></v-text-field>
+      </v-form>
+    </v-flex>
+    <v-flex xs12 sm6 offset-sm3 v-for="word in words" v-bind:key="word.word">
+      <wordcard :word="word"></wordcard>
+    </v-flex>
+  </v-layout>
+</script>
+
+
+
+
+<script id="descs" type="x-template">
+
+      <v-layout wrap>
+        <v-flex v-for="desc in descs" v-bind:key="desc.text">
+          <v-card>
+            <v-card-text>
+              {{desc.text}}
+            </v-card-text>
+          </v-card>
+        </v-flex>
+
+      </v-layout>
+
+</script>
+
+
+
+
+
+
+
+
+<script id="wordcard" type="x-template">
+
+  <v-card>
+
+      <v-card-title>
+        <h2 class="the-word">
+          {{parts[0]}}{{parts[1]}}&#x301{{parts[2]}} &mdash;
+        </h2>
+
+        <v-btn color="grey" :class="{'lighten-3':!open.desc,'lighten-1':open.desc}"  @click="open.desc=!open.desc" small icon>
+            <span style="color:rgb(104,104,104)">ЭТО</span>
+        </v-btn>
+        <v-spacer></v-spacer>
+
+        <v-menu v-model="open.author"
+            nudge-bottom="16"
+            top
+            left
+            transition="slide-x-transition"
+            origin="right">
+
+            <v-btn slot="activator" small icon >
+                <v-icon color="grey">mdi-account-circle</v-icon>
+            </v-btn>
+
+            <v-card width="300">
+              <v-list class="grey lighten-3">
+                <v-list-tile>
+                  <v-list-tile-avatar>
+                    <v-btn icon :href="word.author.link" target="_blank">
+                        <v-icon >mdi-open-in-new</v-icon>
+                    </v-btn>
+                  </v-list-tile-avatar>
+                  <v-list-tile-content>
+                    <v-list-tile-title>{{word.author.name}}</v-list-tile-title>
+                    <v-list-tile-sub-title>Москва</v-list-tile-sub-title>
+                  </v-list-tile-content>
+
+                  <v-list-tile-action>
+                    <v-btn
+                      icon
+                      @click="open.author = false"
+                    >
+                      <v-icon>mdi-close-circle</v-icon>
+                    </v-btn>
+                  </v-list-tile-action>
+                </v-list-tile>
+              </v-list>
+            </v-card>
+        </v-menu>
+
+
+
+      </v-card-title>
+
+      <v-slide-y-transition>
+        <v-card-text class="grey lighten-3" v-show="open.desc">
+          <h3 >
+            {{word.primary_desc ? word.primary_desc.text : 'Придумай своё определение!'}}
+          </h3>
+        </v-card-text>
+      </v-slide-y-transition>
+
+
+
+  </v-card>
+</script>
+
+<!-- ADD-CARD TEMPLATE -->
+
+<script id="addword" type="x-template">
+  <v-card>
+    <div class="front">
+      <div class="add-word">
+        <input v-model="addWord.title" type="text">
+        <input v-model="addWord.stress" type="number">
+        <input v-model="addWord.desc" type="textarea">
+        <button type="submit" @click="add()">
+          Добавить
+        </button>
+      </div>
+      <div @click.prevent="flip()" class="turner">
+        ↩︎
+      </div>
+    </div>
+  <v-card>
+</script>
+
+<script src="side/vue.js"></script>
+<script src="side/vue-router.js"></script>
+<script src="side/vue-material.min.js"></script>
+<script src="side/vuetify.js"></script>
+<script src="side/directus-sdk.umd.js"></script>
+<script src="components.js"></script>
+<script src="views.js"></script>
+<script src="app.js"></script>
+
+
+
+
+</html>

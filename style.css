@@ -1,0 +1,25 @@
+body {
+  font-family: 'Helvetica Neue', Helvetica, 'Segoe UI', Arial, sans-serif !important;
+}
+
+
+
+/*
+  Card
+*/
+
+
+.the-word {
+  font-family: 'Helvetica Neue', Helvetica, 'Segoe UI', Arial, sans-serif !important;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.v-input__prepend-inner {
+  margin-top:0 !important;
+}
+
+
+.card.back {
+  background: url("assets/web-pattern.png");
+}
