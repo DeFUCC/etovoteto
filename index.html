@@ -26,7 +26,6 @@
           <v-toolbar-items>
             <v-btn flat small to="/">Слова</v-btn>
             <v-btn flat small to="/desc">Определения</v-btn>
-            <v-btn flat small to="/author">Авторы</v-btn>
           </v-toolbar-items>
           <v-spacer></v-spacer>
         </v-toolbar>
@@ -146,7 +145,7 @@
           <v-text-field
             @input="search(add.word)"
             @click:clear="add.word=''"
-            :rules="wordRules"
+            :rules="rules.word"
             clearable
             outline
             counter
@@ -154,26 +153,29 @@
             label="Выдуманное слово"
             v-model="add.word"></v-text-field>
       </v-form>
+
     </v-flex>
-    <v-flex v-if="words" xs12 sm6 offset-sm3 v-for="word in words" v-bind:key="word.word">
+
+    <v-flex v-if="words" xs12 sm6 offset-sm3 v-for="word in words" v-bind:key="word.id">
       <wordcard :word="word"></wordcard>
     </v-flex>
 
-    <v-flex xs12 sm8 offset-sm2 v-if="newWord && valid"  >
+    <v-flex xs12 sm8 offset-sm2 v-if="newWord && valid && !(newStep==5)"  >
 
     <v-stepper v-model="newStep" vertical>
     <v-flex  ma-3><h3 >Такого слова ещё нет в нашем словаре. Давайте добавим!</h3></v-flex>
     <v-stepper-step :complete="newStep>1" step="1">
-      Укажите ударение в слове
+      Ударение
     </v-stepper-step>
 
     <v-stepper-content step="1">
+
       <v-btn-toggle v-model="stress">
-        <v-btn large @click="newStep=2;add.stress=index+1" v-for="(letter,index) in add.word" :key="index">{{letter}}</v-btn>
+        <v-btn @click="newStep=2;add.stress=index+1" v-for="(letter,index) in add.word" :key="index">{{letter}}</v-btn>
       </v-btn-toggle>
     </v-stepper-content>
 
-    <v-stepper-step  :rules="[() => newStep<=2 || validDesc]" :complete="newStep > 2" step="2">Придумайте определение</v-stepper-step>
+    <v-stepper-step  :rules="[() => newStep<=2 || validDesc]" :complete="newStep > 2" step="2">Определение</v-stepper-step>
 
     <v-stepper-content step="2">
       <h2 mb-2 class="the-word">
@@ -181,29 +183,97 @@
         </h2>
         <v-form @submit.prevent v-model="validDesc">
             <v-textarea
-              :rules="descRules"
+              :rules="rules.desc"
               box
               auto-grow
               counter="140"
               hint="Что это слово могло бы обозначать?"
               v-model="add.desc"></v-textarea>
-            <v-btn :disabled="!validDesc" small @click="newStep=3">Готово</v-btn>
+            <v-btn dark :disabled="!validDesc" @click="newStep=3">Представиться</v-btn>
+            <v-btn outline :disabled="!validDesc" @click="newStep=4">Аноним</v-btn>
+
+
         </v-form>
 
     </v-stepper-content>
 
-    <v-stepper-step  :complete="newStep > 3" step="3">Представьтесь</v-stepper-step>
+    <v-stepper-step :complete="newStep > 3" step="3">Автор</v-stepper-step>
 
     <v-stepper-content step="3">
 
-      как вас зовут?
+        <v-form v-model="validAuthor"></v-form>
+
+              <v-text-field
+
+                outline
+                counter
+                hint="Имя и фамилия или псевдоним"
+                :rules="rules.name"
+                label="Имя"
+                v-model="author.name"></v-text-field>
+
+                <v-text-field
+                  outline
+                  counter
+                  hint="Ваш аккаунт в выбранной сети"
+                  :rules="rules.account"
+                  label="Аккаунт"
+                  v-model="author.account" >
+
+                    <v-menu slot="prepend-inner" >
+                      <v-btn slot="activator" flat large icon><v-icon>mdi-{{author.net}}</v-icon>
+                      <v-icon>mdi-chevron-down</v-icon></v-btn>
+
+                      <v-list>
+                        <v-list-tile
+                          v-for="(net, index) in nets"
+                          :key="index"
+                          @click="author.net=net.name"
+                        >
+                          <v-list-tile-title><v-icon>mdi-{{net.name}}</v-icon></v-list-tile-title>
+                        </v-list-tile>
+                      </v-list>
+                    </v-menu>
+
+
+
+                </v-text-field>
+
+                  <v-btn  @click="newStep=4">Представиться</v-btn>
+
 
     </v-stepper-content>
 
-  </v-stepper>
+    <v-stepper-step :complete="newStep > 4" step="4">Всё верно?</v-stepper-step>
+
+    <v-stepper-content step="4">
+      <v-layout>
+        <v-flex>
+        <v-card color="grey lighten-3">
+          <v-card-title>
+            <div>
+              <h2 class="the-word">{{parts[0]}}{{parts[1]}}&#x301{{parts[2]}} &mdash; это <v-btn grey small icon><v-icon>mdi-square-edit-outline</v-icon></v-btn></h2>
+              <p>{{add.desc}} </p>
+            </div>
+
+
+          </v-card-title>
+          <v-card-actions><v-icon>mdi-account-circle</v-icon> {{author.name || 'Аноним'}}</v-card-actions>
+
+        </v-card>
+        </v-flex>
+      </v-layout>
+        <small>Новые слова проходят модерацию 1—4 дня</small>
+          <v-btn small outline :disabled="!validDesc" @click="newStep=3">Назад</v-btn>
+          <v-btn small dark :disabled="!validDesc" @click="newStep=5;create(add,author)">Отправить</v-btn>
+
+    </v-stepper-content>
+
+
+</v-stepper>
+
 
     </v-flex>
-
   </v-layout>
 </script>
 
@@ -246,7 +316,7 @@
         </v-btn>
         <v-spacer></v-spacer>
 
-        <v-menu v-model="open.author"
+        <v-menu v-if="word.author" v-model="open.author"
             nudge-bottom="16"
             top
             left
@@ -261,8 +331,8 @@
               <v-list class="grey lighten-3">
                 <v-list-tile>
                   <v-list-tile-avatar>
-                    <v-btn icon :href="word.author.link" target="_blank">
-                        <v-icon >mdi-open-in-new</v-icon>
+                    <v-btn icon>
+                        <v-icon >mdi-{{word.author.net}}</v-icon> {{word.author.account}}
                     </v-btn>
                   </v-list-tile-avatar>
                   <v-list-tile-content>
@@ -298,26 +368,6 @@
 
 
   </v-card>
-</script>
-
-<!-- ADD-CARD TEMPLATE -->
-
-<script id="addword" type="x-template">
-  <v-card>
-    <div class="front">
-      <div class="add-word">
-        <input v-model="addWord.title" type="text">
-        <input v-model="addWord.stress" type="number">
-        <input v-model="addWord.desc" type="textarea">
-        <button type="submit" @click="add()">
-          Добавить
-        </button>
-      </div>
-      <div @click.prevent="flip()" class="turner">
-        ↩︎
-      </div>
-    </div>
-  <v-card>
 </script>
 
 <script src="side/vue.js"></script>
