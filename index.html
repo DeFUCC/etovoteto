@@ -67,10 +67,11 @@
         hint=""
         :rules="rules.email"
         validate-on-blur
-
+        browser-autocomplete
         label="Эл. почта"
         v-model="user.email"></v-text-field>
         <v-text-field
+          browser-autocomplete
           outline
           counter
           hint=""
@@ -143,8 +144,8 @@
     <v-flex xs12 sm6 offset-sm3>
       <v-form @submit.prevent v-model="valid">
           <v-text-field
-            autofocus
             @input="search(add.word)"
+            @click:clear="add.word=''"
             :rules="wordRules"
             clearable
             outline

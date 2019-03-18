@@ -83,7 +83,7 @@ const WordsPage = Vue.component('words', {
         v => v.length>7 || 'Слишком короткое определение'
       ],
       wordRules:[
-        v => /^[А-Яа-яёЁ]+$/.test(v) || 'Только русские буквы',
+        v => /^[А-Яа-яёЁ]*$/.test(v) || 'Только русские буквы',
         v => (v || '').indexOf(' ') < 0 || 'Только одно слово, без пробелов'
       ],
     }
@@ -111,6 +111,9 @@ const WordsPage = Vue.component('words', {
         this.words=data.data
       }).catch(error => console.log(error));
     },
+
+
+
     getWords(limit=100) {
       client.getItems('words',{
         fields:'word,stress,primary_desc.text,author.*,author.avatar.*.*',
@@ -125,14 +128,25 @@ const WordsPage = Vue.component('words', {
   },
   computed: {
     parts() {
+      if (!this.add.word) {this.add.word=''}
       let stress=this.add.stress-1;
-      let arr = [...this.add.word];
+      console.log(stress)
+      let arr = this.add.word.split('');
+      console.log(arr)
       let parts=[];
-      parts[0]=arr[0].toUpperCase() + arr.slice(1,stress).join('');
-      parts[1]=arr.slice(stress,stress+1).join('');
-      parts[2]=arr.slice(stress+1).join('');
+      if (arr.length>0) {
+        arr[0] = arr[0].toUpperCase();
+        parts[0]=arr.slice(0,stress).join('');
+
+        parts[1]=arr.slice(stress,stress+1).join('');
+
+        parts[2]=arr.slice(stress+1).join('');
+
+      } else {
+        parts=['','','']
+      }
       return parts
-    }
+    },
   },
   created() {
     this.getWords();
