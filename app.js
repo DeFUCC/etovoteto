@@ -18,6 +18,10 @@ const router = new VueRouter({
 })
 
 
+Vue.use(Vuetify, {
+ iconfont: 'fa'
+})
+
 
 // VUE APP
 

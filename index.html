@@ -4,9 +4,9 @@
   <head>
     <title>ЭТОВОТЭТО</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
-    <link rel="stylesheet" href="style.css"/>
-    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet">
-    <link href="https://cdn.materialdesignicons.com/2.5.94/css/materialdesignicons.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="css/style.css"/>
+    <link href="css/all.css" rel="stylesheet">
+
     <link href="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css" rel="stylesheet">
 
   </head>
@@ -31,12 +31,13 @@
         </v-toolbar>
 
         <v-content>
-          <v-snackbar v-if="auth && !loggedIn" auto-height="auto-height" color="grey lighten-2" v-model="auth" multi-line="multi-line" vertical="vertical" :timeout="0" top="top">
+          <v-snackbar v-if="auth && !loggedIn" auto-height="auto-height" color="grey lighten-1" v-model="auth" multi-line="multi-line" vertical="vertical" :timeout="0" top="top">
             <v-form v-model="valid">
               <v-layout row="row" wrap="wrap">
 
                 <v-flex xs12="xs12" text-xs-center="text-xs-center">
-                  <v-text-field v-if="!loggedIn" autofocus="autofocus" outline="outline" :rules="rules.email" counter="counter" hint="" browser-autocomplete="browser-autocomplete" label="Эл. почта" v-model="user.email"></v-text-field>
+                  <v-text-field v-if="!loggedIn" autofocus="autofocus" outline="outline" :rules="rules.email"
+                  hint="" browser-autocomplete="browser-autocomplete" label="Эл. почта" v-model="user.email"></v-text-field>
                 </v-flex>
                 <v-flex xs8="xs8" text-xs-center="text-xs-center">
                   <v-text-field
@@ -45,7 +46,6 @@
                     counter="counter"
                     hint=""
                     :rules="rules.password"
-                    validate-on-blur="validate-on-blur"
                     :type="showPassword ? 'text' : 'password'"
                     :append-icon="showPassword ? 'visibility' : 'visibility_off'"
                     @click:append="showPassword = !showPassword"
@@ -55,13 +55,13 @@
 
                 <v-flex align-center="align-center" xs2="xs2" text-xs-center="text-xs-center">
                   <v-btn :disabled="!valid" icon="icon" @click="login(user)">
-                    <v-icon>mdi-arrow-right</v-icon>
+                    <v-icon>fa-arrow-right</v-icon>
                   </v-btn>
 
                 </v-flex>
                 <v-flex align-center="align-center" xs2="xs2" text-xs-center="text-xs-center">
                   <v-btn icon="icon" @click="auth=false">
-                    <v-icon>mdi-close-circle</v-icon>
+                    <v-icon>fa-times-circle</v-icon>
                   </v-btn>
                 </v-flex>
 
@@ -96,23 +96,16 @@
         <v-toolbar flat="flat" color="grey lighten-3">
           <v-spacer></v-spacer>
 
-
-
-          <v-btn icon="icon" large="large" @click="status=0;search()" :flat="status!=0" :disabled="status==0">
-            <v-icon>mdi-book-open-variant</v-icon>
-          </v-btn>
-
-
-
-          <v-btn icon="icon" large="large" @click="status=1;search()" :flat="status!=1" :disabled="status==1">
-            <v-icon>mdi-asterisk</v-icon>
-          </v-btn>
+          <v-btn icon="icon" :class="{'fa-spin':!loaded}"  @click="search()" >
+              <v-icon>fa-redo</v-icon>
+            </v-btn>
 
           <v-menu bottom="bottom" offset-y="offset-y">
             <!-- Activator -->
 
-            <v-btn large="large" slot="activator" icon="icon">{{limit}}
-              <v-icon>mdi-chevron-down</v-icon>
+            <v-btn large class="title" slot="activator" icon="icon">
+              {{limit}}&nbsp;
+              <v-icon>fa-angle-down</v-icon>
             </v-btn>
 
             <!-- List -->
@@ -126,34 +119,52 @@
             </v-list>
           </v-menu>
 
-          <v-btn large="large" icon="icon" @click="$emit('auth')">
-            <v-icon>mdi-account-box-outline</v-icon>{{userName}}</v-btn>
+          <v-btn icon="icon"  @click="status=0;search()" :flat="status!=0" :disabled="status==0">
+              <v-icon>fa-book</v-icon>
+            </v-btn>
+
+        <v-btn icon="icon"  @click="status=1;search()" :flat="status!=1" :disabled="status==1">
+              <v-icon>fa-inbox</v-icon>
+            </v-btn>
+
+          <v-btn icon="icon" @click="$emit('auth')">
+            <v-icon>fa-sign-in-alt</v-icon>{{userName}}</v-btn>
           <v-spacer></v-spacer>
         </v-toolbar>
       </v-flex>
 
-      <v-flex class="text-xs-center" xs12="xs12" sm6="sm6" offset-sm3="offset-sm3">
-
-        <v-progress-linear color="grey" v-model="loading" height="2" :indeterminate="!loaded"></v-progress-linear>
-      </v-progress-linear>
-    </v-flex>
-
       <v-flex v-if="status==1" xs12="xs12" sm6="sm6" offset-sm3="offset-sm3">
 
-        <v-alert icon="mdi-asterisk"  value="true" dismissible outline="outline" color="error">
+        <v-alert icon="fa-inbox"  value="true"  outline="outline" color="error">
           <h3>Осторожно, черновики!</h3>
-          Здесь отображаются все предложенные гостями слова и определения, ожидающие модерации. За содержание черновиков редакция ответственности не несёт.
+          Новые слова и определения, ожидающие модерации. За содержание черновиков редакция ответственности не несёт.
         </v-alert>
 
       </v-flex>
 
+      <v-flex xs12 sm6 offset-sm3 >
+        <v-progress-linear
+            color="grey"
+            v-model="loading"
+            height="2"
+            :indeterminate="!loaded"></v-progress-linear>
+        </v-progress-linear>
+      </v-flex>
+
+
+
       <v-flex v-if="words" xs12="xs12" sm6="sm6" offset-sm3="offset-sm3" v-for="word in words" v-bind:key="word.id">
 
-        <wordcard :word="word"></wordcard>
+        <this-card @load="loading=$event" :word="word"></this-card>
 
       </v-flex>
 
-      <add v-if="add.word && validWord && words.length==0" :add="add" @load="loading=$event" @added="wordAdded($event)"></add>
+      <v-flex xs12="xs12" sm6 offset-sm3>
+
+        <this-add v-if="add.word && validWord && words.length==0" :add="add" @load="loading=$event" @added="wordAdded($event)"></this-add>
+
+      </v-flex>
+
 
       <v-snackbar v-model="added" bottom="bottom" color="grey" :timeout="5000">
         Слово
@@ -168,25 +179,27 @@
   </v-container>
 </script>
 
-<script id="wordcard" type="x-template">
+<script id="this-card" type="x-template">
 
   <v-card :class="{'grey':word.status=='draft','lighten-2':word.status=='draft'}">
 
     <v-card-title>
       <h2 class="the-word">
         {{parts[0]}}{{parts[1]}}&#x301{{parts[2]}}
-        &mdash;
       </h2>
-
-      <v-btn color="grey" :class="{'lighten-3':!open.desc,'lighten-1':open.desc}" @click="open.desc=!open.desc" small="small" icon="icon">
-        <span style="color:rgb(104,104,104)">ЭТО</span>
-      </v-btn>
       <v-spacer></v-spacer>
+
+    <v-btn icon disabled>
+      <v-icon v-if="word.status=='published'" color="grey">fa-book</v-icon>
+      <v-icon v-if="word.status=='draft'" color="grey">fa-inbox</v-icon>
+    </v-btn>
+
+
 
       <v-menu v-if="word.author" v-model="open.author" nudge-bottom="16" top="top" left="left" transition="slide-x-transition" origin="right">
 
         <v-btn slot="activator" small="small" icon="icon">
-          <v-icon color="grey">mdi-account-circle</v-icon>
+          <v-icon color="grey">fa-user-circle</v-icon>
         </v-btn>
 
         <v-card width="280">
@@ -195,17 +208,17 @@
 
               <v-list-tile-content>
                 <v-list-tile-title>
-                  <v-icon >mdi-account-circle</v-icon>
+                  <v-icon >fa-user-circle</v-icon>
                   {{word.author.name}}</v-list-tile-title>
                 <v-list-tile-sub-title v-if="word.author.account">
-                  <v-icon >mdi-{{word.author.net}}</v-icon>
+                  <v-icon >fab fa-{{word.author.net}}</v-icon>
                   {{word.author.account}}
                 </v-list-tile-sub-title>
               </v-list-tile-content>
 
               <v-list-tile-action>
                 <v-btn icon="icon" @click="open.author = false">
-                  <v-icon>mdi-close-circle</v-icon>
+                  <v-icon>fa-times-circle</v-icon>
                 </v-btn>
               </v-list-tile-action>
             </v-list-tile>
@@ -213,10 +226,17 @@
         </v-card>
       </v-menu>
 
+
+        <v-btn @click="open.newDesc=!open.newDesc" small icon><v-icon color="grey">fa-plus-circle</v-icon></v-btn>
+
+      <v-btn color="grey" :class="{'lighten-3':!open.desc,'lighten-1':open.desc}" @click="open.desc=!open.desc" small="small" icon="icon">
+        <v-icon color="grey">fa-angle-down</v-icon>
+      </v-btn>
+
     </v-card-title>
 
     <v-slide-y-transition>
-      <v-card-text class="grey" :class="{'lighten-3':word.status=='published','lighten-1':word.status=='draft'}" v-show="open.desc">
+      <v-card-text v-if="word.descs" class="grey" :class="{'lighten-3':word.status=='published','lighten-1':word.status=='draft'}" v-show="open.desc">
       <v-layout row wrap>
       <v-flex :key="desc.desc_id.id" v-for="desc in word.descs">
         <v-card>
@@ -232,25 +252,32 @@
       </v-card-text>
     </v-slide-y-transition>
 
+    <v-slide-y-transition>
+      <this-add v-show="open.newDesc" :add="word"
+      @load="$emit('load',$event)" @added="wordAdded($event)"></this-add>
+
+    </v-slide-y-transition>
 
   </v-card>
 </script>
 
-<script id="add" type="x-template">
+<script id="this-add" type="x-template">
 
-  <v-flex xs12="xs12" sm8="sm8" offset-sm2="offset-sm2">
+  <v-flex >
+
     <v-stepper v-if="!(newStep==5)" v-model="newStep" vertical="vertical">
-      <v-flex ma-3="ma-3">
+      <v-flex v-if="newWord" ma-3="ma-3">
         <h3 >Такого слова ещё нет в нашем словаре. Давайте добавим!</h3>
       </v-flex>
-      <v-stepper-step :complete="newStep>1" step="1">
+
+      <v-stepper-step v-if="newWord" :complete="newStep>1" step="1">
         Ударение
       </v-stepper-step>
 
-      <v-stepper-content step="1">
+      <v-stepper-content v-if="newWord" step="1">
 
         <v-btn-toggle v-model="add.stress">
-          <v-btn @click="newStep=2;add.stress=index+1" v-for="(letter,index) in add.word" :key="index">{{letter}}</v-btn>
+          <v-btn @click="newStep=2;add.stress=index" v-for="(letter,index) in add.word" :key="index">{{letter}}</v-btn>
         </v-btn-toggle>
       </v-stepper-content>
 
@@ -263,9 +290,11 @@
         </h2>
         <v-form @submit.prevent="" v-model="valid.desc">
           <v-textarea :rules="rules.desc" box="box" auto-grow="auto-grow" counter="140" hint="Что это слово могло бы обозначать?" v-model="add.desc"></v-textarea>
-          <v-btn outline="outline" @click="newStep=1">Назад</v-btn>
+
+          <v-btn v-if="newWord" icon  @click="newStep=1;add.stress=null"><v-icon>fa-arrow-up</v-icon></v-btn>
+
           <v-btn outline="outline" :disabled="!valid.desc" @click="newStep=4">Аноним</v-btn>
-          <v-btn dark="dark" :disabled="!valid.desc" @click="newStep=3">Представиться</v-btn>
+          <v-btn dark="dark" :disabled="!valid.desc" @click="newStep=3">Автор</v-btn>
 
         </v-form>
 
@@ -281,23 +310,23 @@
 
         <v-text-field outline="outline" counter="counter" hint="Ваш аккаунт в выбранной сети" :rules="rules.account" label="Аккаунт" v-model="author.account">
 
-          <v-menu slot="prepend-inner">
+          <v-menu ma-0 slot="prepend-inner">
             <v-btn slot="activator" flat="flat" large="large" icon="icon">
-              <v-icon>mdi-{{author.net}}</v-icon>
-              <v-icon>mdi-chevron-down</v-icon>
+              <v-icon>fab fa-{{author.net}}</v-icon>&nbsp;
+              <v-icon>fa-angle-down</v-icon>
             </v-btn>
 
             <v-list>
               <v-list-tile v-for="(net, index) in nets" :key="index" @click="author.net=net.name">
                 <v-list-tile-title>
-                  <v-icon>mdi-{{net.name}}</v-icon>
+                  <v-icon>fab fa-{{net.name}}</v-icon>
                 </v-list-tile-title>
               </v-list-tile>
             </v-list>
           </v-menu>
 
         </v-text-field>
-
+          <v-btn icon @click="newStep=2;"><v-icon>fa-arrow-up</v-icon></v-btn>
         <v-btn @click="newStep=4">Представиться</v-btn>
 
       </v-stepper-content>
@@ -311,10 +340,7 @@
               <v-card-title>
                 <div>
                   <h2 class="the-word">{{parts[0]}}{{parts[1]}}&#x301{{parts[2]}}
-                    &mdash; это
-                    <v-btn grey="grey" small="small" icon="icon">
-                      <v-icon>mdi-square-edit-outline</v-icon>
-                    </v-btn>
+
                   </h2>
                   <p>{{add.desc}}
                   </p>
@@ -322,27 +348,27 @@
 
               </v-card-title>
               <v-card-actions>
-                <v-icon>mdi-account-circle</v-icon>
+                <v-icon>fa-account-circle</v-icon>
                 {{author.name || 'Аноним'}}</v-card-actions>
 
             </v-card>
           </v-flex>
         </v-layout>
-        <small>Новые слова проходят модерацию 1—4 дня</small>
-        <v-btn small="small" outline="outline" :disabled="!valid.desc" @click="newStep=3">Назад</v-btn>
-        <v-btn small="small" dark="dark" :disabled="!valid.desc" @click="newStep=5;create(add,author)">Отправить</v-btn>
+        <small>Новые слова проходят модерацию 1—4 дня</small><br />
+        <v-btn icon  :disabled="!valid.desc" @click="newStep=3"><v-icon>fa-arrow-up</v-icon></v-btn>
+        <v-btn dark="dark" :disabled="!valid.desc" @click="newStep=5;send()">Отправить</v-btn>
 
       </v-stepper-content>
 
     </v-stepper>
-
+  {{add}}
   </v-flex>
 </script>
 
 <script id="descs" type="x-template">
   <v-container grid-list-lg="grid-list-lg">
     <v-layout wrap="wrap">
-      <v-flex v-for="desc in descs" v-bind:key="desc.text">
+      <v-flex v-for="desc in descs" v-bind:key="desc.id">
         <v-card>
           <v-card-text>
             {{desc.text}}
@@ -392,14 +418,14 @@
 
             <v-menu slot="prepend-inner">
               <v-btn slot="activator" flat="flat" large="large" icon="icon">
-                <v-icon>mdi-{{user.net}}</v-icon>
-                <v-icon>mdi-chevron-down</v-icon>
+                <v-icon>fab fa-{{user.net}}</v-icon>
+                <v-icon>fa-angle-down</v-icon>
               </v-btn>
 
               <v-list>
                 <v-list-tile v-for="(net, index) in nets" :key="index" @click="user.net=net.name">
                   <v-list-tile-title>
-                    <v-icon>mdi-{{net.name}}</v-icon>
+                    <v-icon>fab fa-{{net.name}}</v-icon>
                   </v-list-tile-title>
                 </v-list-tile>
               </v-list>

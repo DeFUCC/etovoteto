@@ -16,12 +16,13 @@ const WordsPage = Vue.component('words', {
       validWord:false,
       add: {
         word: '',
-        stress:0,
+        stress:null,
         desc:''
       },
       wordRules: [
           v => /^[А-Яа-яёЁ]*$/.test(v) || 'Только русские буквы',
-          v => (v || '').indexOf(' ') < 0 || 'Только одно слово, без пробелов'
+          v => (v || '').indexOf(' ') < 0 || 'Только одно слово, без пробелов',
+          v => (v || '').length<21 || 'Слишком длинное слово'
       ]
 
     }
@@ -49,7 +50,7 @@ const WordsPage = Vue.component('words', {
       this.loaded=false;
 
       client.getItems('words',{
-        fields:'word,stress,primary_desc.id,descs.desc_id.*,author.name, author.net, author.account,status',
+        fields:'id,word,stress,primary_desc.id,descs.desc_id.*,author.name, author.net, author.account,status',
         status: this.statuses[this.status],
         limit:this.limit,
         sort:'?',
@@ -67,7 +68,7 @@ const WordsPage = Vue.component('words', {
     getWords() {
       this.loaded=false;
       client.getItems('words',{
-        fields:'word,stress,primary_desc.id,descs.desc_id.*,author.name, author.net, author.account,status',
+        fields:'id,word,stress,primary_desc.id,descs.desc_id.*,author.name, author.net, author.account,status',
         status:this.statuses[this.status],
         sort:'?',
         limit:this.limit
@@ -99,13 +100,14 @@ const DescPage = Vue.component('descs', {
   data() {
     return {
       title:'Descriptions page',
-      limit:10,
+      limit:100,
       descs:[]
     }
   },
   created() {
     client.getItems('desc',{
-      fields:'id,text,author.name,author.account,author.net',
+      fields:'*.*',
+      sort:'?',
       limit:this.limit
     }).then(data => {
       console.log(data)
