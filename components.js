@@ -1,17 +1,6 @@
-const Card = Vue.component('this-card', {
-  template: '#this-card',
-  props: {
-    word: {
-      type: Object,
-      default: {
-        word: 'Несуществующее слово'
-      }
-    },
-    status: {
-      type: Number,
-      default: 0
-    }
-  },
+const WordCard = Vue.component('word-card', {
+  template: '#word-card',
+  props: ['word'],
   data() {
     return {
       open: {
@@ -50,6 +39,48 @@ const Card = Vue.component('this-card', {
 })
 
 
+const DescCard = Vue.component('desc-card', {
+  template: '#desc-card',
+  props: ['desc'],
+  data() {
+    return {
+      open: {
+        desc: false,
+        author: false,
+        authorDetails: false,
+        newDesc: false
+      },
+      currentState: 0,
+      valid: {
+        desc: false
+      },
+
+      show: {}
+    }
+  },
+  methods: {
+    getParts(word) {
+      let parts = [];
+      if (word.words_id) {
+        let stress = word.words_id.stress;
+        let arr = [...word.words_id.word];
+
+        parts[0] = arr.slice(0, stress).join('');
+        parts[1] = arr.slice(stress, stress + 1).join('');
+        parts[2] = arr.slice(stress + 1).join('');
+      }
+      return parts
+    }
+  },
+  mounted() {
+
+  },
+  computed: {
+
+  }
+})
+
+
 const Add = Vue.component('this-add', {
   template: '#this-add',
   props: {
@@ -71,6 +102,11 @@ const Add = Vue.component('this-add', {
         author: false
       },
       rules: {
+        word: [
+            v => /^[А-Яа-яёЁ]*$/.test(v) || 'Только русские буквы',
+            v => (v || '').indexOf(' ') < 0 || 'Только одно слово, без пробелов',
+            v => (v || '').length<21 || 'Слишком длинное слово'
+        ],
         name: [
           v => !!v || 'Представьтесь, пожалуйста'
         ],
@@ -102,11 +138,6 @@ const Add = Vue.component('this-add', {
     }
   },
   methods: {
-    getAnonym() {
-      let filter = {
-        name: 'Аноним'
-      }
-    },
     findAuthor() {
       let filter = {
       };
@@ -143,9 +174,10 @@ const Add = Vue.component('this-add', {
       })
     },
     createWord() {
+      let word = this.add.word[0].toUpperCase() + this.add.word.substring(1);
       return client.createItem('words', {
         status: 'draft',
-        word: this.add.word,
+        word: word,
         author: this.data.authorId,
         stress: this.add.stress,
         primary_desc: this.data.descId,
@@ -171,7 +203,9 @@ const Add = Vue.component('this-add', {
     },
     success() {
       if (this.data.added) {
-        this.$emit('added', this.data.added);
+        this.$emit('wordAdded', this.data.added);
+      } else {
+        this.$emit('descAdded',this.add.desc)
       }
       this.$emit('load', undefined);
       console.log('success');
@@ -198,7 +232,8 @@ const Add = Vue.component('this-add', {
           })
           .then(author => {
             //Записываем автора
-            this.data.authorId=author.id
+            console.log(author)
+            this.data.authorId=author.id || author.data.id
           })
           .catch(e=>{console.log(e)})
 
@@ -252,16 +287,8 @@ const Add = Vue.component('this-add', {
             })
             .catch(e=>console.log(e))
         }
-
         //Завершаем процесс
         create.then(this.success)
-
-
-
-
-      if (this.author.name) {
-        console.log('with author')
-      }
     }
   },
   computed: {
@@ -282,17 +309,12 @@ const Add = Vue.component('this-add', {
         parts = ['', '', '']
       }
       return parts
-    },
-    baseFilter() {
-      let bases = []
-      if (this.filter.draft) {
-
-      }
     }
   },
   created() {
     if (this.add.id) {
       this.newWord = false;
+      this.newStep=1;
     }
   }
 });

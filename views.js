@@ -4,13 +4,17 @@ const WordsPage = Vue.component('words', {
   data() {
     return {
       added:false,
+      modes:['words','descs'],
+      mode:0,
       statuses:['published','draft'],
       status:0,
       limit:5,
       limits:[1,5,10,20,50,100],
       addedWord:'',
+      addedDesc:'',
       title:'Words page',
       words:[],
+      descs:[],
       loaded:false,
       loading:0,
       validWord:false,
@@ -28,10 +32,9 @@ const WordsPage = Vue.component('words', {
     }
   },
   watch: {
-    status() {() => {
-      console.log('wow!')
-      this.getWords()
-    }}
+    status() {
+      this.search()
+    }
   },
   methods: {
     clearWord() {
@@ -46,29 +49,53 @@ const WordsPage = Vue.component('words', {
       this.add.word='';
       this.getWords();
     },
-    search() {
-      this.loaded=false;
-
-      client.getItems('words',{
-        fields:'id,word,stress,primary_desc.id,descs.desc_id.*,author.name, author.net, author.account,status',
-        status: this.statuses[this.status],
-        limit:this.limit,
-        sort:'?',
-        filter: {
-          word: {
-            contains: this.add.word
-          }
-        }
-      }).then(data => {
-        this.words=data.data
-        this.loaded=true;
-      }).catch(error => console.log(error));
+    descAdded(desc) {
+      this.added=true;
+      this.addedDesc=desc;
     },
+    search() {
+      if (this.mode==0) {
+        this.loaded=false;
+        client.getItems('words',{
+          fields:'id,word,stress,primary_desc.id,descs.desc_id.*,descs.desc_id.author.*,author.name, author.net, author.account,status',
+          status: this.statuses[this.status],
+          limit:this.limit,
+          sort:'?',
+          filter: {
+            word: {
+              contains: this.add.word
+            }
+          }
+        }).then(data => {
+          this.words=data.data
+          this.descs=[];
+          this.loaded=true;
+        }).catch(error => console.log(error));
+      }
 
+      if (this.mode==1) {
+        this.loaded=false;
+        client.getItems('desc',{
+          fields:'*.*, words.words_id.*',
+          status: this.statuses[this.status],
+          limit:this.limit,
+          sort:'?',
+          filter: {
+            text: {
+              contains: this.add.word
+            }
+          }
+        }).then(data => {
+          this.descs=data.data
+          this.words=[];
+          this.loaded=true;
+        }).catch(error => console.log(error));
+      }
+    },
     getWords() {
       this.loaded=false;
       client.getItems('words',{
-        fields:'id,word,stress,primary_desc.id,descs.desc_id.*,author.name, author.net, author.account,status',
+        fields:'id,word,stress,primary_desc.id,descs.desc_id.*,descs.desc_id.author.*,author.name, author.net, author.account,status',
         status:this.statuses[this.status],
         sort:'?',
         limit:this.limit
@@ -92,27 +119,100 @@ const WordsPage = Vue.component('words', {
 })
 
 
-
-
-
 const DescPage = Vue.component('descs', {
   template:'#descs',
+  props: ['user'],
   data() {
     return {
-      title:'Descriptions page',
-      limit:100,
-      descs:[]
+      added:false,
+      statuses:['published','draft'],
+      status:0,
+      limit:5,
+      limits:[1,5,10,20,50,100],
+      addedWord:'',
+      addedDesc:'',
+      title:'Descs page',
+      words:[],
+      descs:[],
+      loaded:false,
+      loading:0,
+      validDesc:false,
+      add: {
+        word: '',
+        stress:null,
+        desc:''
+      },
+      descRules: [
+          v => /^[А-Яа-яёЁ]*$/.test(v) || 'Только русские буквы',
+          v => (v || '').length<30 || 'Слишком длинный запрос'
+      ]
+
+    }
+  },
+  watch: {
+    status() {
+      this.searchDesc()
+    }
+  },
+  methods: {
+    clearWord() {
+      this.add.word='';
+      this.add.stress=0;
+      this.add.desc=''
+
+    },
+    wordAdded(word) {
+      this.added=true;
+      this.addedWord=word;
+      this.add.word='';
+      this.getWords();
+    },
+    descAdded(desc) {
+      this.added=true;
+      this.addedDesc=desc;
+    },
+    searchDesc() {
+      this.loaded=false;
+
+      client.getItems('desc',{
+        fields:'*.*,words.words_id.*,words.words_id.author.*',
+        status: this.statuses[this.status],
+        limit:this.limit,
+        sort:'?',
+        filter: {
+          text: {
+            contains: this.add.desc
+          }
+        }
+      }).then(data => {
+        this.descs=data.data
+        this.loaded=true;
+      }).catch(error => console.log(error));
+    },
+
+    getDescs() {
+      this.loaded=false;
+      client.getItems('desc',{
+        fields:'*.*,words.words_id.*,words.words_id.author.*',
+        status:this.statuses[this.status],
+        sort:'?',
+        limit:this.limit
+      }).then(data => {
+        this.descs=data.data;
+        this.loaded=true;
+      }).catch(error => console.log(error));
+
+    }
+  },
+  computed: {
+    userName() {
+      if(this.user && this.user.data && this.user.data.first_name) {
+        return this.user.data.first_name
+      }
     }
   },
   created() {
-    client.getItems('desc',{
-      fields:'*.*',
-      sort:'?',
-      limit:this.limit
-    }).then(data => {
-      console.log(data)
-      this.descs=data.data
-    }).catch(error => console.log(error));
+    this.getDescs();
   }
 })
 
