@@ -3,6 +3,7 @@
 
   <head>
     <title>ЭТОВОТЭТО</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
     <meta charset="UTF-8">
     <link rel="stylesheet" href="css/style.css"/>
@@ -13,6 +14,46 @@
   <body>
     <div id="app">
       <v-app>
+
+        <v-dialog v-model="newUser" width="500">
+          <v-card>
+        <v-card-title
+          class="headline grey lighten-2"
+          primary-title
+        >
+          Добро пожаловать!
+        </v-card-title>
+
+        <v-card-text>
+          <h2>Это онлайн-версия игры ЭТОВОТЭТО. </h2>
+
+          <p>Начните вводить выдуманное слово, чтобы найти похожее в словаре. </p>
+
+          <p>Если такого слова нет — добавьте его! Для этого укажите ударение щелкнув на кнопку с нужной буквой, затем напишите своё определение придуманного слова, а затем представьтесь указав реальное или вымышленное имя и, по желанию, аккаунт в предпочтительной социальной сети. Проверьте слово и отправляйте его на проверку! </p>
+
+          <p>
+          Чтобы увидеть его сразу — нажмите на иконку <v-icon>fa-inbox</v-icon> и вы увидите все присланные, но ещё не прошедшие проверку черновики слов и определений. </p>
+          <p>
+            Вы можете посмотреть определения слов, нажав на значок <v-icon>fa-angle-down</v-icon>, а также можете добавить опредение к любому слову в словаре или черновиках, нажав на значок <v-icon>fa-plus-circle</v-icon> в его карточке.
+          </p>
+          <p>Это самая первая рабочая версия игры — мы будем рады любым идеям по её совершенствованию. Присылайте ваши идеи и предложения на <a href="mailto:davay@frkt.ru">davay@frkt.ru</a> </p>
+        </v-card-text>
+
+        <v-divider></v-divider>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="black"
+            flat
+            @click="newUser = false"
+          >
+            Ясно
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+        </v-dialog>
+
         <v-toolbar flat="flat" height="120px">
           <v-spacer></v-spacer>
           <v-toolbar-title style="margin-left:0;" class="display-2">ЭТО ВОТ ЭТО</v-toolbar-title>
@@ -22,6 +63,7 @@
         <v-toolbar flat="flat">
           <v-spacer></v-spacer>
           <v-toolbar-items>
+            <v-btn flat="flat" small="small" href="http://etovoteto.ru"><v-icon>fa-angle-left</v-icon></v-btn>
             <v-btn flat="flat" small="small" to="/">Слова</v-btn>
             <v-btn flat="flat" small="small" to="/desc">Определения</v-btn>
 
@@ -83,7 +125,7 @@
 
       <v-flex xs12="xs12" sm6="sm6" offset-sm3="offset-sm3">
         <v-form @submit.prevent="" v-model="validWord">
-          <v-text-field @input="search(add.word)"  :rules="wordRules" outline counter hint="Найдите слово в словаре или предложите новое понятие" label="Несуществующее слово" v-model="add.word"></v-text-field>
+          <v-text-field @input="search(add.word)"  :rules="wordRules" outline counter hint="Найдите слово в словаре или предложите новое понятие" label="Введите придуманное вами слово" v-model="add.word"></v-text-field>
         </v-form>
 
       </v-flex>
