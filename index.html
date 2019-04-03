@@ -198,6 +198,14 @@
 
         <word-card @load="loading=$event" @descAdded="descAdded($event)" :word="word"></word-card>
 
+        <v-card v-if="userName == 'Admin'">
+          <v-card-actions>
+            <v-btn icon @click="approve(word)">
+              <v-icon>fa-check-double</v-icon>
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+
       </v-flex>
 
       <v-flex xs12="xs12" sm6 offset-sm3>
@@ -325,7 +333,6 @@
     <v-slide-y-transition>
       <this-add v-show="open.newDesc" :add="word"
       @load="$emit('load',$event)" @descAdded="$emit('descAdded',$event);open.newDesc=false"></this-add>
-
     </v-slide-y-transition>
 
   </v-card>

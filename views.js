@@ -41,7 +41,6 @@ const WordsPage = Vue.component('words', {
       this.add.word='';
       this.add.stress=0;
       this.add.desc=''
-
     },
     wordAdded(word) {
       this.added=true;
@@ -52,6 +51,13 @@ const WordsPage = Vue.component('words', {
     descAdded(desc) {
       this.added=true;
       this.addedDesc=desc;
+    },
+    approve(word) {
+      console.log(word);
+      let appWord = client.updateItem('words',word.id,{status:'published'})
+      appWord.then(()=>{
+        client.updateItem('desc',word.primary_desc.id,{status:'published'})
+      }).then(()=>{console.log('approved!')})
     },
     search() {
       if (this.mode==0) {

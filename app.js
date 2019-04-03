@@ -30,7 +30,7 @@ const thisApp = new Vue({
   router:router,
   data: {
     title:'ЭТОВОТЭТО',
-    newUser:true,
+    newUser:false,
     auth:false,
     valid:false,
     loggedIn:false,
