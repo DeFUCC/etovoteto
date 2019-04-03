@@ -10,6 +10,11 @@ const WordCard = Vue.component('word-card', {
         newDesc: false
       },
       currentState: 0,
+      nets: {
+        instagram:'https://instagram.com/',
+        vk:'https://vk.com/',
+        facebook:'https://facebook.com/'
+      },
       valid: {
         desc: false
       },
@@ -48,7 +53,7 @@ const DescCard = Vue.component('desc-card', {
         desc: false,
         author: false,
         authorDetails: false,
-        newDesc: false
+        newWord: false
       },
       currentState: 0,
       valid: {

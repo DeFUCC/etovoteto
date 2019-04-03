@@ -198,7 +198,7 @@
 
         <word-card @load="loading=$event" @descAdded="descAdded($event)" :word="word"></word-card>
 
-        <v-card v-if="userName == 'Admin'">
+        <v-card v-if="word.status != 'published' && userName == 'Admin'">
           <v-card-actions>
             <v-btn icon @click="approve(word)">
               <v-icon>fa-check-double</v-icon>
@@ -252,8 +252,8 @@
                   <v-icon >fa-user-circle</v-icon>
                   {{word.author.name}}</v-list-tile-title>
                 <v-list-tile-sub-title v-if="word.author.account">
-                  <v-icon >fab fa-{{word.author.net}}</v-icon>
-                  {{word.author.account}}
+                  <a target="_blank" :href="nets[word.author.net]+word.author.account"><v-icon >fab fa-{{word.author.net}}</v-icon>
+                  {{word.author.account}}</a>
                 </v-list-tile-sub-title>
               </v-list-tile-content>
 
@@ -416,7 +416,7 @@
 
     <v-flex v-if="descs" xs12="xs12" sm6="sm6" offset-sm3="offset-sm3" v-for="desc in descs" v-bind:key="desc.id">
 
-    <desc-card :desc="desc"></desc-card>
+    <desc-card @load="loading=$event" @wordAdded="wordAdded($event)" :desc="desc"></desc-card>
 
     </v-flex>
 
@@ -479,9 +479,6 @@
         </v-card>
       </v-menu>
 
-
-        <v-btn v-if="false" :class="{'turn45':open.newDesc}" @click="open.newDesc=!open.newDesc" small icon><v-icon color="grey">fa-plus-circle</v-icon></v-btn>
-
       <v-btn color="grey lighten-3" :class="{'turn180':open.desc}" @click="open.desc=!open.desc" small="small" icon="icon">
         <v-icon color="grey">fa-angle-down</v-icon>
       </v-btn>
@@ -541,6 +538,7 @@
         </v-layout>
       </v-card-text>
     </v-slide-y-transition>
+
 
   </v-card>
 </script>

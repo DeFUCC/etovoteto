@@ -57,7 +57,10 @@ const WordsPage = Vue.component('words', {
       let appWord = client.updateItem('words',word.id,{status:'published'})
       appWord.then(()=>{
         client.updateItem('desc',word.primary_desc.id,{status:'published'})
-      }).then(()=>{console.log('approved!')})
+      }).then(()=>{
+        console.log('approved!');
+        this.search();
+      })
     },
     search() {
       if (this.mode==0) {
