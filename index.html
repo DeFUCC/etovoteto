@@ -579,7 +579,7 @@
             &mdash; это
           </h2>
           <v-form @submit.prevent="" v-model="valid.desc">
-            <v-textarea :rules="rules.desc" box="box" auto-grow="auto-grow" counter="140" hint="Что это слово могло бы обозначать?" v-model="add.desc"></v-textarea>
+            <v-textarea :rules="rules.desc" box="box" auto-grow="auto-grow" counter="280" hint="Что это слово могло бы обозначать?" v-model="add.desc"></v-textarea>
 
             <v-btn outline="outline" :disabled="!valid.desc" @click="newStep=3">Аноним</v-btn>
             <v-btn dark="dark" :disabled="!valid.desc" @click="newStep=2">Автор</v-btn>
