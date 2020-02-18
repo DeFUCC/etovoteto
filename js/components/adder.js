@@ -1,93 +1,118 @@
-const WordCard = Vue.component('word-card', {
-  template: '#word-card',
-  props: ['word'],
-  data() {
-    return {
-      open: {
-        desc: false,
-        author: false,
-        authorDetails: false,
-        newDesc: false
-      },
-      currentState: 0,
-      nets: {
-        instagram:'https://instagram.com/',
-        vk:'https://vk.com/',
-        facebook:'https://facebook.com/'
-      },
-      valid: {
-        desc: false
-      },
+import client from '../client.js'
 
-      show: {}
-    }
-  },
-  methods: {
-    descOptions(id) {
-      this.show[id] = true;
-    }
-  },
-  mounted() {
+export default {
+  template: `
+  <v-flex>
+  <v-flex v-if="newWord" ma-3="ma-3">
+    <h3 >Такого слова ещё нет в нашем словаре. Давайте добавим!</h3>
+  </v-flex>
+    <v-expansion-panel v-model="newStep">
+      <v-expansion-panel-content v-show="newWord">
+        <div slot="header">
+          Ударение
+        </div>
+        <div slot="actions">
+          <v-icon>fa-angle-down</v-icon>
+        </div>
+        <v-card>
+          <v-card-text>
+          <v-btn-toggle v-model="add.stress">
+            <v-btn @click="newStep=1;add.stress=index" v-for="(letter,index) in add.word" :key="index">{{letter}}</v-btn>
+          </v-btn-toggle>
+          </v-card-text>
+        </v-card>
+      </v-expansion-panel-content>
+      <v-expansion-panel-content>
+        <div slot="header">
+          Определение
+        </div>
+        <div slot="actions">
+          <v-icon>fa-angle-down</v-icon>
+        </div>
+        <v-card>
+          <v-card-text>
+          <h2 mb-2="mb-2" class="the-word">
+            {{parts[0]}}{{parts[1]}}&#x301{{parts[2]}}
+            &mdash; это
+          </h2>
+          <v-form @submit.prevent="" v-model="valid.desc">
+            <v-textarea :rules="rules.desc" box="box" auto-grow="auto-grow" counter="140" hint="Что это слово могло бы обозначать?" v-model="add.desc"></v-textarea>
 
-  },
-  computed: {
-    parts() {
-      let stress = this.word.stress;
-      let arr = [...this.word.word];
-      let parts = [];
-      parts[0] = arr.slice(0, stress).join('');
-      parts[1] = arr.slice(stress, stress + 1).join('');
-      parts[2] = arr.slice(stress + 1).join('');
-      return parts
-    }
-  }
-})
+            <v-btn outline="outline" :disabled="!valid.desc" @click="newStep=3">Аноним</v-btn>
+            <v-btn dark="dark" :disabled="!valid.desc" @click="newStep=2">Автор</v-btn>
 
+          </v-form>
+          </v-card-text>
+        </v-card>
+      </v-expansion-panel-content>
+      <v-expansion-panel-content>
+        <div slot="header">
+          Автор
+        </div>
+        <div slot="actions">
+          <v-icon>fa-angle-down</v-icon>
+        </div>
+        <v-card>
+          <v-card-text>
+            <v-form v-model="valid.author">
+            <v-text-field outline="outline" counter="counter" hint="Имя и фамилия или псевдоним" :rules="rules.name" label="Имя" v-model="author.name"></v-text-field>
+            <v-text-field outline="outline" counter="counter" hint="Ваш аккаунт в выбранной сети" :rules="rules.account" label="Аккаунт" v-model="author.account">
+              <v-menu ma-0 slot="prepend-inner">
+                <v-btn slot="activator" flat="flat" large="large" icon="icon">
+                  <v-icon>fab fa-{{author.net}}</v-icon>&nbsp;
+                  <v-icon>fa-angle-down</v-icon>
+                </v-btn>
+                <v-list>
+                  <v-list-tile v-for="(net, index) in nets" :key="index" @click="author.net=net.name">
+                    <v-list-tile-title>
+                      <v-icon>fab fa-{{net.name}}</v-icon>
+                    </v-list-tile-title>
+                  </v-list-tile>
+                </v-list>
+              </v-menu>
+            </v-text-field>
+            <v-btn @click="newStep=3">Представиться</v-btn>
+            </v-form>
+          </v-card-text>
+        </v-card>
+      </v-expansion-panel-content>
+      <v-expansion-panel-content>
+        <div slot="header">
+          Подтверждение
+        </div>
+        <div slot="actions">
+          <v-icon>fa-angle-down</v-icon>
+        </div>
+        <v-card>
+          <v-card-text>
+          <v-layout>
+            <v-flex>
+              <v-card color="grey lighten-3">
+                <v-card-title>
+                  <div>
+                    <h2 class="the-word">{{parts[0]}}{{parts[1]}}&#x301{{parts[2]}}
 
-const DescCard = Vue.component('desc-card', {
-  template: '#desc-card',
-  props: ['desc'],
-  data() {
-    return {
-      open: {
-        desc: false,
-        author: false,
-        authorDetails: false,
-        newWord: false
-      },
-      currentState: 0,
-      valid: {
-        desc: false
-      },
+                    </h2>
+                    <p>{{add.desc}}
+                    </p>
+                  </div>
 
-      show: {}
-    }
-  },
-  methods: {
-    getParts(word) {
-      let parts = [];
-      if (word.words_id) {
-        let stress = word.words_id.stress;
-        let arr = [...word.words_id.word];
+                </v-card-title>
+                <v-card-actions>
+                  <v-icon>fa-account-circle</v-icon>
+                  {{author.name || 'Аноним'}}</v-card-actions>
 
-        parts[0] = arr.slice(0, stress).join('');
-        parts[1] = arr.slice(stress, stress + 1).join('');
-        parts[2] = arr.slice(stress + 1).join('');
-      }
-      return parts
-    }
-  },
-  mounted() {
-
-  },
-  computed: {
-
-  }
-})
-
-
-const Add = Vue.component('this-add', {
-  template: '#this-add',
+              </v-card>
+            </v-flex>
+          </v-layout>
+          <small>Новые слова проходят модерацию 1—4 дня</small><br />
+          <v-btn dark="dark" :disabled="!valid.desc" @click="newStep=5;send()">Отправить</v-btn>
+          </v-card-text>
+        </v-card>
+      </v-expansion-panel-content>
+    </v-expansion-panel>
+  </v-flex>
+  `,
   props: {
     add: Object
   },
@@ -322,4 +347,4 @@ const Add = Vue.component('this-add', {
       this.newStep=1;
     }
   }
-});
+}
