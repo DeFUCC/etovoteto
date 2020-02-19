@@ -118,11 +118,615 @@
     </div>
   </body>
 
+  <script id="words" type="x-template">
+    <v-container grid-list-lg="grid-list-lg">
 
-<script src="js/side/vue.js"></script>
-<script src="js/side/vue-router.js"></script>
-<script src="js/side/vuetify.js"></script>
-<script src="js/side/directus-sdk.umd.js"></script>
-<script src="js/app.js" type="module"></script>
+      <v-layout row="row" wrap="wrap">
+
+      <v-flex xs12="xs12" sm6="sm6" offset-sm3="offset-sm3">
+        <v-form @submit.prevent="" v-model="validWord">
+          <v-text-field @input="search(add.word)"  :rules="wordRules" outline counter hint="Найдите слово в словаре или предложите новое понятие" label="Введите придуманное вами слово" v-model="add.word"></v-text-field>
+        </v-form>
+
+      </v-flex>
+
+      <v-flex xs12="xs12" sm6="sm6" offset-sm3="offset-sm3">
+        <v-toolbar dark flat="flat" color="grey darken-1">
+          <v-spacer></v-spacer>
+
+          <v-btn icon="icon" :class="{'fa-spin':!loaded}"  @click="search()" >
+              <v-icon>fa-redo</v-icon>
+            </v-btn>
+
+          <v-menu bottom="bottom" offset-y="offset-y">
+            <!-- Activator -->
+
+            <v-btn large class="title" slot="activator" icon="icon">
+              {{limit}}&nbsp;
+              <v-icon>fa-angle-down</v-icon>
+            </v-btn>
+
+            <!-- List -->
+            <v-list dense="dense">
+              <v-list-tile v-for="(lim,i) in limits" :key="i" @click="limit=lim;search()">
+
+                <v-list-tile-title >
+                  {{lim}}
+                </v-list-tile-title>
+              </v-list-tile>
+            </v-list>
+          </v-menu>
+
+
+          <v-btn-toggle dark v-model="status">
+            <v-btn icon="icon"  >
+                <v-icon>fa-book</v-icon>
+              </v-btn>
+
+            <v-btn icon="icon"   >
+                <v-icon>fa-inbox</v-icon>
+              </v-btn>
+          </v-btn-toggle>
+          <v-btn icon="icon" @click="$emit('auth')">
+            <v-icon>fa-sign-in-alt</v-icon>{{userName}}</v-btn>
+          <v-spacer></v-spacer>
+        </v-toolbar>
+      </v-flex>
+
+      <v-flex  v-if="status==1" xs12="xs12" sm6="sm6" offset-sm3="offset-sm3">
+
+
+        <v-alert transition="slide-y-transition" icon="fa-inbox"  value="true"  outline="outline" color="error" class="draft">
+          <h3>Осторожно, черновики!</h3>
+          Это новые слова и понятия, ожидающие модерации. За их содержание редакция ответственности не несёт.
+        </v-alert>
+
+      </v-flex>
+
+      <v-flex xs12 sm6 offset-sm3 >
+        <v-progress-linear
+            color="grey"
+            v-model="loading"
+            height="2"
+            :indeterminate="!loaded"></v-progress-linear>
+        </v-progress-linear>
+      </v-flex>
+
+
+
+      <v-flex v-if="words" xs12="xs12" sm6="sm6" offset-sm3="offset-sm3" v-for="word in words" v-bind:key="word.id">
+
+        <word-card @load="loading=$event" @descAdded="descAdded($event)" :word="word"></word-card>
+
+        <v-card v-if="word.status != 'published' && userName == 'Admin'">
+          <v-card-actions>
+            <v-btn icon @click="approve(word)">
+              <v-icon>fa-check-double</v-icon>
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+
+      </v-flex>
+
+      <v-flex xs12="xs12" sm6 offset-sm3>
+
+        <this-add v-if="add.word && validWord && words.length==0" :add="add" @load="loading=$event" @wordAdded="wordAdded($event)" @descAdded="descAdded($event);"></this-add>
+
+      </v-flex>
+
+      <v-snackbar vertical v-model="added" top color="grey" :timeout="6000">
+        <span class="subheading" v-if="addedWord">Слово «{{addedWord}}» добавлено в черновики.</span>
+        <span class="subheading" v-if="addedDesc">Определение «{{addedDesc}}» добавлено в черновики.</span>
+        <v-btn dark="dark" flat="flat" @click="added = false">
+          Close
+        </v-btn>
+      </v-snackbar>
+
+    </v-layout>
+  </v-container>
+</script>
+
+<script id="word-card" type="x-template">
+
+  <v-card :class="{'grey draft lighten-2':word.status=='draft'} ">
+
+    <v-card-title>
+      <h2 v-if="word" class="the-word">
+        {{parts[0]}}{{parts[1]}}&#x301{{parts[2]}}
+      </h2>
+
+      <v-spacer></v-spacer>
+
+      <v-menu v-if="word.author" v-model="open.author" nudge-bottom="16" top="top" left="left" transition="slide-x-transition" origin="right">
+
+        <v-btn slot="activator" v-if="word.author.name!='Аноним'" small="small" icon="icon">
+          <v-icon  color="grey">fa-user-circle</v-icon>
+        </v-btn>
+
+        <v-card width="280">
+          <v-list class="grey">
+            <v-list-tile>
+
+              <v-list-tile-content>
+                <v-list-tile-title>
+                  <v-icon >fa-user-circle</v-icon>
+                  {{word.author.name}}</v-list-tile-title>
+                <v-list-tile-sub-title v-if="word.author.account">
+                  <a target="_blank" :href="nets[word.author.net]+word.author.account"><v-icon >fab fa-{{word.author.net}}</v-icon>
+                  {{word.author.account}}</a>
+                </v-list-tile-sub-title>
+              </v-list-tile-content>
+
+              <v-list-tile-action>
+                <v-btn icon="icon" @click="open.author = false">
+                  <v-icon>fa-times-circle</v-icon>
+                </v-btn>
+              </v-list-tile-action>
+            </v-list-tile>
+          </v-list>
+        </v-card>
+      </v-menu>
+
+
+        <v-btn :class="{'turn45':open.newDesc}" @click="open.newDesc=!open.newDesc" small icon><v-icon color="grey">fa-plus-circle</v-icon></v-btn>
+
+      <v-btn color="grey lighten-3" :class="{'turn180':open.desc}" @click="open.desc=!open.desc" small="small" icon="icon">
+        <v-icon color="grey">fa-angle-down</v-icon>
+      </v-btn>
+
+    </v-card-title>
+
+    <v-slide-y-transition>
+      <v-card-text v-if="word.descs" class="grey" :class="{'lighten-3':word.status=='published','lighten-1':word.status=='draft'}" v-show="open.desc">
+      <v-layout column>
+      <v-flex :key="desc.desc_id.id" v-for="desc in word.descs">
+        <v-card :class="{'grey lighten-2':word.primary_desc && word.primary_desc.id!=desc.desc_id.id, 'draft':desc.desc_id.status!='published'}">
+          <v-card-text>
+          <v-layout row>
+            <v-flex xs10>
+
+             {{desc.desc_id.text}}
+
+            </v-flex>
+
+            <v-flex row text-xs-center xs2>
+              <v-icon v-if="word.primary_desc && word.primary_desc.id==desc.desc_id.id" small>fa-dot-circle</v-icon>
+              <v-menu  v-if="desc.desc_id.author" nudge-bottom="16" top="top" left="left" transition="slide-x-transition" origin="right">
+
+              <v-btn slot="activator" v-if="desc.desc_id.author.name!='Аноним'" small="small" icon="icon">
+                <v-icon  color="grey">fa-user-circle</v-icon>
+              </v-btn>
+
+              <v-card width="280">
+                <v-list class="grey">
+                  <v-list-tile>
+
+                    <v-list-tile-content>
+                      <v-list-tile-title>
+                        <v-icon >fa-user-circle</v-icon>
+                        {{desc.desc_id.author.name}}</v-list-tile-title>
+                      <v-list-tile-sub-title v-if="desc.desc_id.author.account">
+                        <v-icon >fab fa-{{desc.desc_id.author.net}}</v-icon>
+                        {{desc.desc_id.author.account}}
+                      </v-list-tile-sub-title>
+                    </v-list-tile-content>
+
+                    <v-list-tile-action>
+                      <v-btn icon="icon" @click="open.author = false">
+                        <v-icon>fa-times-circle</v-icon>
+                      </v-btn>
+                    </v-list-tile-action>
+                  </v-list-tile>
+                </v-list>
+              </v-card>
+            </v-menu>
+            </v-flex>
+          </v-layout>
+           </v-card-text>
+
+        </v-card>
+        </v-flex>
+        </v-layout>
+      </v-card-text>
+    </v-slide-y-transition>
+
+    <v-slide-y-transition>
+      <this-add v-show="open.newDesc" :add="word"
+      @load="$emit('load',$event)" @descAdded="$emit('descAdded',$event);open.newDesc=false"></this-add>
+    </v-slide-y-transition>
+
+  </v-card>
+</script>
+
+<script id="descs" type="x-template">
+  <v-container grid-list-lg="grid-list-lg">
+
+    <v-layout row="row" wrap="wrap">
+
+    <v-flex xs12="xs12" sm6="sm6" offset-sm3="offset-sm3">
+      <v-form @submit.prevent="" v-model="validDesc">
+        <v-text-field @input="searchDesc()"  :rules="descRules" outline counter hint="Найдите понятие в словаре или предложите новое" label="Несуществующее понятие" v-model="add.desc"></v-text-field>
+      </v-form>
+
+    </v-flex>
+
+    <v-flex xs12="xs12" sm6="sm6" offset-sm3="offset-sm3">
+      <v-toolbar dark flat="flat" color="grey darken-1">
+        <v-spacer></v-spacer>
+
+        <v-btn icon="icon" :class="{'fa-spin':!loaded}"  @click="searchDesc()" >
+            <v-icon>fa-redo</v-icon>
+          </v-btn>
+
+        <v-menu bottom="bottom" offset-y="offset-y">
+          <!-- Activator -->
+
+          <v-btn large class="title" slot="activator" icon="icon">
+            {{limit}}&nbsp;
+            <v-icon>fa-angle-down</v-icon>
+          </v-btn>
+
+          <!-- List -->
+          <v-list dense="dense">
+            <v-list-tile v-for="(lim,i) in limits" :key="i" @click="limit=lim;searchDesc()">
+
+              <v-list-tile-title >
+                {{lim}}
+              </v-list-tile-title>
+            </v-list-tile>
+          </v-list>
+        </v-menu>
+
+
+        <v-btn-toggle dark v-model="status">
+          <v-btn icon="icon"  >
+              <v-icon>fa-book</v-icon>
+            </v-btn>
+
+          <v-btn icon="icon"   >
+              <v-icon>fa-inbox</v-icon>
+            </v-btn>
+        </v-btn-toggle>
+        <v-btn icon="icon" @click="$emit('auth')">
+          <v-icon>fa-sign-in-alt</v-icon>{{userName}}</v-btn>
+        <v-spacer></v-spacer>
+      </v-toolbar>
+    </v-flex>
+
+    <v-flex  v-if="status==1" xs12="xs12" sm6="sm6" offset-sm3="offset-sm3">
+
+
+      <v-alert transition="slide-y-transition" icon="fa-inbox"  value="true"  outline="outline" color="error" class="draft">
+        <h3>Осторожно, черновики!</h3>
+        Это новые слова и понятия, ожидающие модерации. За их содержание редакция ответственности не несёт.
+      </v-alert>
+
+    </v-flex>
+
+    <v-flex xs12 sm6 offset-sm3 >
+      <v-progress-linear
+          color="grey"
+          v-model="loading"
+          height="2"
+          :indeterminate="!loaded"></v-progress-linear>
+      </v-progress-linear>
+    </v-flex>
+
+
+
+    <v-flex v-if="descs" xs12="xs12" sm6="sm6" offset-sm3="offset-sm3" v-for="desc in descs" v-bind:key="desc.id">
+
+    <desc-card @load="loading=$event" @wordAdded="wordAdded($event)" :desc="desc"></desc-card>
+
+    </v-flex>
+
+    <v-flex xs12="xs12" sm6 offset-sm3>
+
+      <this-add v-if="add.word && validWord && words.length==0" :add="add" @load="loading=$event" @wordAdded="wordAdded($event)" @descAdded="descAdded($event);"></this-add>
+
+    </v-flex>
+
+    <v-snackbar vertical v-model="added" top color="grey" :timeout="6000">
+      <span class="subheading" v-if="addedWord">Слово «{{addedWord}}» добавлено в черновики.</span>
+      <span class="subheading" v-if="addedDesc">Определение «{{addedDesc}}» добавлено в черновики.</span>
+      <v-btn dark="dark" flat="flat" @click="added = false">
+        Close
+      </v-btn>
+    </v-snackbar>
+
+  </v-layout>
+</v-container>
+</script>
+
+<script id="desc-card" type="x-template">
+
+  <v-card :class="{'grey draft lighten-2':desc.status=='draft'}">
+
+    <v-card-title>
+      <div class="subheading">
+        {{desc.text}}
+      </div>
+
+      <v-spacer></v-spacer>
+
+      <v-menu v-if="desc.author" v-model="open.author" nudge-bottom="16" top="top" left="left" transition="slide-x-transition" origin="right">
+
+        <v-btn slot="activator" v-if="desc.author.name!='Аноним'" small="small" icon="icon">
+          <v-icon  color="grey">fa-user-circle</v-icon>
+        </v-btn>
+
+        <v-card width="280">
+          <v-list class="grey">
+            <v-list-tile>
+
+              <v-list-tile-content>
+                <v-list-tile-title>
+                  <v-icon >fa-user-circle</v-icon>
+                  {{desc.author.name}}</v-list-tile-title>
+                <v-list-tile-sub-title v-if="desc.author.account">
+                  <v-icon >fab fa-{{desc.author.net}}</v-icon>
+                  {{desc.author.account}}
+                </v-list-tile-sub-title>
+              </v-list-tile-content>
+
+              <v-list-tile-action>
+                <v-btn icon="icon" @click="open.author = false">
+                  <v-icon>fa-times-circle</v-icon>
+                </v-btn>
+              </v-list-tile-action>
+            </v-list-tile>
+          </v-list>
+        </v-card>
+      </v-menu>
+
+      <v-btn color="grey lighten-3" :class="{'turn180':open.desc}" @click="open.desc=!open.desc" small="small" icon="icon">
+        <v-icon color="grey">fa-angle-down</v-icon>
+      </v-btn>
+
+    </v-card-title>
+
+    <v-slide-y-transition>
+      <v-card-text v-if="desc.words" class="grey" :class="{'lighten-3':desc.status=='published','lighten-1':desc.status=='draft'}" v-show="open.desc">
+      <v-layout column>
+      <v-flex :key="word.words_id.id" v-for="word in desc.words">
+        <v-card :class="{'draft':word.words_id && word.words_id.status != 'published'}">
+
+              <v-card-text>
+              <v-layout row>
+                <v-flex xs10>
+                  <h2 v-if="word.words_id.word" class="the-word">
+                    {{getParts(word)[0]}}{{getParts(word)[1]}}&#x301{{getParts(word)[2]}}
+                  </h2>
+                </v-flex>
+                <v-flex row text-xs-center xs2>
+                  <v-icon v-if="desc.primary_word && desc.primary_word.id==word.words_id.id" small>fa-dot-circle</v-icon>
+                  <v-menu  v-if="word.words_id.author" nudge-bottom="16" top="top" left="left" transition="slide-x-transition" origin="right">
+
+                  <v-btn slot="activator" v-if="word.words_id.author.name!='Аноним'" small="small" icon="icon">
+                    <v-icon  color="grey">fa-user-circle</v-icon>
+                  </v-btn>
+
+                  <v-card width="280">
+                    <v-list class="grey">
+                      <v-list-tile>
+
+                        <v-list-tile-content>
+                          <v-list-tile-title>
+                            <v-icon >fa-user-circle</v-icon>
+                            {{word.words_id.author.name}}</v-list-tile-title>
+                          <v-list-tile-sub-title v-if="word.words_id.author.account">
+                            <v-icon >fab fa-{{word.words_id.author.net}}</v-icon>
+                            {{word.words_id.author.account}}
+                          </v-list-tile-sub-title>
+                        </v-list-tile-content>
+
+                        <v-list-tile-action>
+                          <v-btn icon="icon" @click="open.author = false">
+                            <v-icon>fa-times-circle</v-icon>
+                          </v-btn>
+                        </v-list-tile-action>
+                      </v-list-tile>
+                    </v-list>
+                  </v-card>
+                </v-menu>
+                </v-flex>
+              </v-layout>
+              </v-card-text>
+
+        </v-card>
+        </v-flex>
+        </v-layout>
+      </v-card-text>
+    </v-slide-y-transition>
+
+
+  </v-card>
+</script>
+
+<script id="this-add" type="x-template">
+
+  <v-flex>
+  <v-flex v-if="newWord" ma-3="ma-3">
+    <h3 >Такого слова ещё нет в нашем словаре. Давайте добавим!</h3>
+  </v-flex>
+    <v-expansion-panel v-model="newStep">
+      <v-expansion-panel-content v-show="newWord">
+        <div slot="header">
+          Ударение
+        </div>
+        <div slot="actions">
+          <v-icon>fa-angle-down</v-icon>
+        </div>
+        <v-card>
+          <v-card-text>
+          <v-btn-toggle v-model="add.stress">
+            <v-btn @click="newStep=1;add.stress=index" v-for="(letter,index) in add.word" :key="index">{{letter}}</v-btn>
+          </v-btn-toggle>
+          </v-card-text>
+        </v-card>
+      </v-expansion-panel-content>
+      <v-expansion-panel-content>
+        <div slot="header">
+          Определение
+        </div>
+        <div slot="actions">
+          <v-icon>fa-angle-down</v-icon>
+        </div>
+        <v-card>
+          <v-card-text>
+          <h2 mb-2="mb-2" class="the-word">
+            {{parts[0]}}{{parts[1]}}&#x301{{parts[2]}}
+            &mdash; это
+          </h2>
+          <v-form @submit.prevent="" v-model="valid.desc">
+            <v-textarea :rules="rules.desc" box="box" auto-grow="auto-grow" counter="280" hint="Что это слово могло бы обозначать?" v-model="add.desc"></v-textarea>
+
+            <v-btn outline="outline" :disabled="!valid.desc" @click="newStep=3">Аноним</v-btn>
+            <v-btn dark="dark" :disabled="!valid.desc" @click="newStep=2">Автор</v-btn>
+
+          </v-form>
+          </v-card-text>
+        </v-card>
+      </v-expansion-panel-content>
+      <v-expansion-panel-content>
+        <div slot="header">
+          Автор
+        </div>
+        <div slot="actions">
+          <v-icon>fa-angle-down</v-icon>
+        </div>
+        <v-card>
+          <v-card-text>
+            <v-form v-model="valid.author">
+            <v-text-field outline="outline" counter="counter" hint="Имя и фамилия или псевдоним" :rules="rules.name" label="Имя" v-model="author.name"></v-text-field>
+            <v-text-field outline="outline" counter="counter" hint="Ваш аккаунт в выбранной сети" :rules="rules.account" label="Аккаунт" v-model="author.account">
+              <v-menu ma-0 slot="prepend-inner">
+                <v-btn slot="activator" flat="flat" large="large" icon="icon">
+                  <v-icon>fab fa-{{author.net}}</v-icon>&nbsp;
+                  <v-icon>fa-angle-down</v-icon>
+                </v-btn>
+                <v-list>
+                  <v-list-tile v-for="(net, index) in nets" :key="index" @click="author.net=net.name">
+                    <v-list-tile-title>
+                      <v-icon>fab fa-{{net.name}}</v-icon>
+                    </v-list-tile-title>
+                  </v-list-tile>
+                </v-list>
+              </v-menu>
+            </v-text-field>
+            <v-btn @click="newStep=3">Представиться</v-btn>
+            </v-form>
+          </v-card-text>
+        </v-card>
+      </v-expansion-panel-content>
+      <v-expansion-panel-content>
+        <div slot="header">
+          Подтверждение
+        </div>
+        <div slot="actions">
+          <v-icon>fa-angle-down</v-icon>
+        </div>
+        <v-card>
+          <v-card-text>
+          <v-layout>
+            <v-flex>
+              <v-card color="grey lighten-3">
+                <v-card-title>
+                  <div>
+                    <h2 class="the-word">{{parts[0]}}{{parts[1]}}&#x301{{parts[2]}}
+
+                    </h2>
+                    <p>{{add.desc}}
+                    </p>
+                  </div>
+
+                </v-card-title>
+                <v-card-actions>
+                  <v-icon>fa-account-circle</v-icon>
+                  {{author.name || 'Аноним'}}</v-card-actions>
+
+              </v-card>
+            </v-flex>
+          </v-layout>
+          <small>Новые слова проходят модерацию 1—4 дня</small><br />
+          <v-btn dark="dark" :disabled="!valid.desc" @click="newStep=5;send()">Отправить</v-btn>
+          </v-card-text>
+        </v-card>
+      </v-expansion-panel-content>
+    </v-expansion-panel>
+  </v-flex>
+</script>
+
+<script id="author" type="x-template">
+  <v-container grid-list-lg="grid-list-lg">
+    <v-layout row="row" wrap="wrap">
+      <v-flex xs12="xs12" sm6="sm6" offset-sm3="offset-sm3">
+
+        <h1 v-if="me">Я ЗДЕСЬ!</h1>
+        {{me}}
+        <p>
+          Этот раздел доступен только авторам. Но автором может стать каждый! Достаточно представиться и войти.
+        </p>
+      </v-flex>
+      <v-flex xs12="xs12" sm6="sm6" offset-sm3="offset-sm3">
+        <v-form v-model="valid">
+          <v-text-field autofocus="autofocus" outline="outline" counter="counter" hint="" :rules="rules.email" validate-on-blur="validate-on-blur" browser-autocomplete="browser-autocomplete" label="Эл. почта" v-model="user.email"></v-text-field>
+          <v-text-field
+            browser-autocomplete="browser-autocomplete"
+            outline="outline"
+            counter="counter"
+            hint=""
+            :rules="rules.password"
+            validate-on-blur="validate-on-blur"
+            :type="showPassword ? 'text' : 'password'"
+            :append-icon="showPassword ? 'visibility' : 'visibility_off'"
+            @click:append="showPassword = !showPassword"
+            label="Пароль"
+            v-model="user.password"></v-text-field>
+
+          <v-flex v-if="!register" text-xs-center="text-xs-center">
+            <v-btn dark="dark" @click="register=true">Представиться</v-btn>
+            <v-btn outline="outline" :disabled="!valid" @click="login(user)">Войти</v-btn>
+          </v-flex>
+
+          <v-text-field v-if="register" outline="outline" counter="counter" hint="Имя и фамилия или псевдоним" :rules="rules.name" label="Имя" v-model="user.name"></v-text-field>
+
+          <v-text-field v-if="register" outline="outline" counter="counter" hint="Ваш аккаунт в выбранной сети" :rules="rules.account" label="Аккаунт" v-model="user.account">
+
+            <v-menu slot="prepend-inner">
+              <v-btn slot="activator" flat="flat" large="large" icon="icon">
+                <v-icon>fab fa-{{user.net}}</v-icon>
+                <v-icon>fa-angle-down</v-icon>
+              </v-btn>
+
+              <v-list>
+                <v-list-tile v-for="(net, index) in nets" :key="index" @click="user.net=net.name">
+                  <v-list-tile-title>
+                    <v-icon>fab fa-{{net.name}}</v-icon>
+                  </v-list-tile-title>
+                </v-list-tile>
+              </v-list>
+            </v-menu>
+
+          </v-text-field>
+
+          <v-flex v-if="register" text-xs-center="text-xs-center">
+            <v-btn @click="register(user)" raised="raised" :disabled="!valid">Представиться</v-btn>
+          </v-flex>
+
+        </v-form>
+      </v-flex>
+    </v-layout>
+  </v-container>
+</script>
+
+<script src="side/vue.js"></script>
+<script src="side/vue-router.js"></script>
+<script src="side/vue-material.min.js"></script>
+<script src="side/vuetify.js"></script>
+<script src="side/directus-sdk.umd.js"></script>
+<script src="components.js"></script>
+<script src="views.js"></script>
+<script src="app.js"></script>
 
 </html>
